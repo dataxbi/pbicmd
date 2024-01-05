@@ -55,10 +55,15 @@ def callback(
     Para más detalles visite https://www.dataxbi.com/pbicmd/
     """
 
+    # Si se está ejecutando un comando, no ejecutar esta función
+    if ctx.invoked_subcommand is not None:
+        return
+
     if version:
         print(f"pbicmd {__version__}")
         return
 
+    # Mostrar la ayuda si no se pasa ningún parámetro
     ctx.get_help()
 
 
@@ -115,7 +120,7 @@ def dax(
         ),
     ] = False,
 ):
-    """Ejecuta una consulta DAX en un modelo semantico publicado en el servicio de Power BI."""
+    """Ejecuta una consulta DAX en un modelo semántico publicado en el servicio de Power BI."""
     dax_query = file_dax.read_text()
 
     access_token = get_access_token()

@@ -112,7 +112,7 @@ Suponiendo que tenemos nuestra consulta DAX guardada en el fichero `consulta.dax
 
 Lo primero que pasará es que se abrirá una pestaña del navegador por defecto en la página de autenticación de Microsoft para que entremos las credenciales para acceder al área de trabajo donde está el modelo.
 
-Luego se ejecutará la consulta y si todo fue bien, se guardará el resultado en el fichero `consulta.csv`. Por defecto el nombre del fichero de salida coincide con el nombre del fichero donde está guardada la consulta DAX y se guardará en la carpeta actual.
+Luego se ejecutará la consulta y si todo fue bien, se guardará el resultado en el fichero `consulta-dddddddd-dddd-dddd-dddd-dddddddddddd.csv`. Por defecto el nombre del fichero de salida se forma concatenando el nombre del fichero donde está guardada la consulta DAX con el ID del modelo y se guardará en la carpeta actual.
 
 Si queremos que el fichero de salida tenga otro nombre o esté en otra carpeta, podemos utilizar el parámetro opcional -o, por ejemplo:
 
@@ -131,4 +131,5 @@ Y por último, podemos imprimir en la terminal el resultado de la consulta con e
 ```
 Hay que tener en cuenta lo siguiente:
 - Si la respuesta tiene más de 10 líneas, se imprimen las 5 primeras y las 5 últimas.
-- Siempre se guarda el resultado completo en un fichero, que por defect
+- Siempre se guarda el resultado completo en un fichero, que por defecto es CSV.
+  

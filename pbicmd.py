@@ -1,4 +1,4 @@
-'''pbicmd: Una herramienta de línea de comando para automatizar tareas de Power BI.
+"""pbicmd: Una herramienta de línea de comando para automatizar tareas de Power BI.
 
 La idea es desarrollar una herramienta CLI (Command Line Interface) que ayude en la automatización de tareas de Power BI.
 Se distribuye como un ejecutable EXE para Windows para que pueda ser utilizada sin instalar Python.
@@ -13,7 +13,7 @@ Las principales librerías que se utilizan son:
 - Typer:            Para manejar los parámetros
 - azure-identity:   Para la autenticación 
 
-'''
+"""
 
 from pathlib import Path
 from uuid import UUID
@@ -32,11 +32,14 @@ from rich.table import Table
 POWER_BI_SCOPE = "https://analysis.windows.net/powerbi/api/.default"
 POWER_BI_API_BASE = "https://api.powerbi.com/v1.0/myorg"
 
+
 class OutputFileFormat(StrEnum):
     csv = "csv"
     parquet = "parquet"
 
+
 app = typer.Typer(add_completion=False)
+
 
 @app.callback(invoke_without_command=True)
 def callback(
@@ -133,7 +136,8 @@ def dax(
         print_dataframe(df)
 
     if output_file_path is None:
-        default_output_file_name = file_dax.stem
+        # El nombre del fichero de salida por defecto es el nombre del fichero de la consulta y el nombre de dataset
+        default_output_file_name = f"{file_dax.stem}-{data_set}"
         if output_file_format == OutputFileFormat.csv:
             output_file_path = f"{default_output_file_name}.csv"
         elif output_file_format == OutputFileFormat.parquet:

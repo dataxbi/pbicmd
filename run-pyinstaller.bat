@@ -15,6 +15,7 @@ pyinstaller ^
 set /p Version=<dist/version.txt
 
 cd dist
+del version.txt
 del *.zip
 "C:\Program Files\7-Zip\7z.exe" -tzip a  pbicmd.%Version%.zip pbicmd.exe
 cd ..

@@ -124,12 +124,9 @@ def dax(
     ] = False,
 ):
     """Ejecuta una consulta DAX en un modelo semántico publicado en el servicio de Power BI."""
-    dax_query = file_dax.read_text()
-
+    dax_query = read_dax_query(file_dax)
     access_token = get_access_token()
-
     r = execute_dax(access_token, data_set, dax_query)
-
     df = load_dax_result_to_dataframe(r)
 
     if print:
@@ -147,6 +144,18 @@ def dax(
         save_dataframe_to_csv(df, output_file_path)
     elif output_file_format == OutputFileFormat.parquet:
         save_dataframe_to_parquet(df, output_file_path)
+
+
+def read_dax_query(file_dax: Path) -> str:
+    """Lee la consulta DAX desde un fichero.
+    Si la consulta DAX tiene caracteres acentuados o con otros signos, por ejemplo, ñ, puede haber conflictos con decodificación.
+    No hay una forma 100% segura de conocer la codificación de fun fichero, por lo que primero se asume que el fichero está codificado en UUTF-8
+    y se trata de leer. Si se recibe un error al decodificar, se intenta leer de nuevo el fichero pero con la codificación por defecto del Sistema Operativo.
+    """
+    try:
+        return file_dax.read_text(encoding="utf-8")
+    except UnicodeDecodeError:
+        return file_dax.read_text()
 
 
 def get_access_token() -> str:

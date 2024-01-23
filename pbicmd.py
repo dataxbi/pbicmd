@@ -292,12 +292,12 @@ def daxdif(
 
     df1 = execute_dax_and_save(access_token, data_set1, dax_query, output_file1_path)
     print(
-        f"Se ha ejecutado la consulta DAX sobre el primer modelo semántico y se ha guarado en el archivo: {output_file1_path}"
+        f"Se ha ejecutado la consulta DAX sobre el primer modelo semántico y se ha guardado en el archivo: {output_file1_path}"
     )
 
     df2 = execute_dax_and_save(access_token, data_set2, dax_query, output_file2_path)
     print(
-        f"Se ha ejecutado la consulta DAX sobre el segundo modelo semántico y se ha guarado en el archivo: {output_file2_path}"
+        f"Se ha ejecutado la consulta DAX sobre el segundo modelo semántico y se ha guardado en el archivo: {output_file2_path}"
     )
 
     # Determinando cuales columnas serán parte de la clave

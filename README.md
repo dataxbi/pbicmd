@@ -2,7 +2,10 @@
 ### Una herramienta de línea de comando (CLI) para automatizar tareas de Power BI
 ---
 
-La idea es ir incorporando comandos para automatizar diferentes tareas. Por ahora tiene un solo comando para ejecutar consultas DAX sobre un modelo semántico publicado en el servicio de Power BI.
+La idea es ir incorporando comandos para automatizar diferentes tareas. Por ahora tiene dos:
+
+- [comando `dax`](#comando-dax)
+- [comando `daxdif`](#comando-daxdif)
 
 `pbicmd` está hecho con Python y es de código abierto.
 
@@ -25,9 +28,9 @@ Si ejecutamos `pbicmd.exe` sin parámetros, obtenemos la ayuda con los comandos 
 ```
 ./pbicmd.exe 
 ```
-![](doc/img/pbicmd-help.png)
+![](doc/img//pbicmd-v0.2.0-help.png)
 
-Más adelante hay una sección con los comandos disponibles (un solo comando por ahora :) pero antes hablaremos de la autenticación.
+Más adelante hay una sección con los comandos disponibles (solo dos comandos por ahora :) pero antes hablaremos de la autenticación.
 
 ## Autenticación
 
@@ -75,7 +78,7 @@ Se puede imprimir la ayuda de un comando de la siguiente manera:
 donde &lt;comando&gt; sería el nombre del comando.
 
 
-### Comando `dax`
+### Comando `dax` <a id="comando-dax"></a>
 
 Este comando permite ejecutar una consulta DAX sobre un modelo semántico publicado en el servicio de Power BI y guardar el resultado en un fichero CSV o Parquet. Funciona con una licencia Pro.
 
@@ -132,4 +135,64 @@ Y por último, podemos imprimir en la terminal el resultado de la consulta con e
 Hay que tener en cuenta lo siguiente:
 - Si la respuesta tiene más de 10 líneas, se imprimen las 5 primeras y las 5 últimas.
 - Siempre se guarda el resultado completo en un fichero, que por defecto es CSV.
-  
+
+
+### Comando `daxdif` 
+
+Este comando compara la ejecución de una misma consulta DAX sobre dos modelos semánticos publicados en el servicio de Power BI y guarda las diferencias en un archivo CSV.
+
+Para hacer la comparación, redondea a 4 lugares decimales y utiliza un valor de tolerancia de 0.01. Tanto el redondeo como la tolerancia se pueden cambiar utilizando parámetros.
+
+Podemos imprimir la ayuda de este comando de la siguiente manera:
+```
+./pbicmd.exe daxdif --help
+```
+
+Para implementar este comando, se utiliza la API REST de Power BI, la cual tiene algunas limitaciones, como se menciona en la descripción del comando `dax`.
+
+La consulta DAX tiene que estar guardada en un fichero, que recomendamos que tenga la extensión .dax, y 
+tiene que comenzar con la instrucción EVALUATE y devolver una tabla.
+
+Los modelos semánticos sobre los que se hará la consulta DAX tienen que estar publicados en el servicio de Power BI. Y para utilizar este comando, necesitamos el ID de ambos modelos semánticos, que se puede obtener abriendo cada modelo en el servicio de Power BI y mirando en el URL que aparece en el navegador. Para más detalles, puede revisar la descripción del comando `dax`.
+
+Una vez obtenidos los ID de los dos modelos semánticos, se pasan a `pbicmd` en los parámetros -d1 y -d2.
+
+Por ejemplo, si tenemos nuestra consulta DAX guardada en el fichero `consulta.dax`, el ID del primer modelo es `dddddddd-dddd-dddd-dddd-dddddddddddd` y el ID del segundo modelo es `eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee`, podemos ejecutar `pbicmd` de esta manera:
+```
+./pbicmd.exe dax consulta.dax -d1 dddddddd-dddd-dddd-dddd-dddddddddddd -d2 eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee
+```
+
+Lo primero que pasará es que se abrirá una pestaña del navegador por defecto en la página de autenticación de Microsoft para que entremos las credenciales para acceder al área de trabajo donde está el modelo.
+
+Luego, se ejecutará la consulta en ambos modelos y se compararán los resultados. Si no se detecta ninguna diferencia, se indica con un texto en color verde. Si se encuentra alguna diferencia, se indica con un texto en color rojo y se guarda el resultado de la comparación en el archivo `consulta_dif_dddddddd-dddd-dddd-dddd-dddddddddddd_eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee.csv`. 
+
+Por defecto, el nombre de este archivo se forma concatenando el nombre del fichero donde está guardada la consulta DAX con los ID de ambos modelos y se guarda en la carpeta actual, pero se puede indicar cualquier nombre utilizando el parámetro `-od`.
+
+Este archivo CSV contendrá las columnas de la consulta DAX y dos columnas adicionales:
+- La columna `__origen__` contendrá los valores `d1` o `d2` para identificar si la fila proviene del primer o el segundo modelo semántico.
+- La columna `__diferencia__` permitirá identificar las columnas de la fila que fueron diferentes en la comparación.
+
+Si además de guardar las diferencias en un fichero CSV, se quiere imprimir en la consola, se puede usar el comando `--print`. Hay que tener en cuenta que si hay más de 10 filas con diferencias, solo se imprimirán las 5 primeras y las 5 últimas.
+
+Los resultados de ejecutar la consulta DAX en cada modelo también se guardan en archivos CSV con un nombre que se forma concatenando el nombre del archivo con la consulta DAX y el ID del modelo, pero dichos nombres también se pueden cambiar con los parámetros `-o1` y `-o2`.
+
+#### Columnas claves
+
+Para que la comparación sea efectiva, la tabla resultante de la consulta DAX tiene que tener una o varias columnas que en conjunto sean únicas para cada fila, que llamaremos columnas claves, y el resto de las columnas serán las que se utilicen para hacer la comparación.
+
+Por defecto, `pbicmd` asume que las columnas claves son todas las columnas con texto, pero se pueden incluir más columnas con el parámetro `-ki`. Por ejemplo, si la consulta DAX devuelve una tabla donde las columnas claves son `Producto[Categoria]`, `Cliente[Provincia]` y `Calendario[Año]`, esta última columna podría no
+
+ ser identificada como de texto por lo que habría que indicarlo, como se muestra a continuación:
+
+```
+./pbicmd.exe dax consulta.dax -d1 dddddddd-dddd-dddd-dddd-dddddddddddd -d2 eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee -ki Calendario[Año]
+```
+
+Si hubiera que incluir más columnas, se pasarían más parámetros `-ki` con los otros nombres de columnas.
+
+#### Redondeo y tolerancia
+
+Cuando se comparan números decimales puede que haya pequeñas diferencias que no signifiquen que el resultado es incorrecto. Por esa razón, antes de hacer la comparación, los valores decimales se redondean y, cuando se hace la comparación, se tiene en cuenta un valor de tolerancia. 
+
+Por defecto, se redondea a 4 lugares decimales, y se puede cambiar con el parámetro `-dp`.
+La tolerancia por defecto es 0.01, y se puede cambiar con el parámetro `-to`.

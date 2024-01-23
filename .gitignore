@@ -1,8 +1,10 @@
 .venv
 build
 dist
+notebooks
 __pycache__
 
+*.ipynb
 *.dax
 *.csv
 *.parquet

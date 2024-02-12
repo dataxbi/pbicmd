@@ -9,9 +9,10 @@ pyinstaller ^
     --onefile ^
     --clean ^
     --noconfirm ^
-    pbicmd.py
+    src/pbicmd.py
 
-".\.venv\scripts\python.exe" _version.py > dist/version.txt
+
+".\.venv\scripts\python.exe" src/_version.py > dist/version.txt
 set /p Version=<dist/version.txt
 
 cd dist

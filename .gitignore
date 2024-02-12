@@ -3,6 +3,7 @@ build
 dist
 notebooks
 __pycache__
+datos
 
 *.ipynb
 *.dax

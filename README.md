@@ -2,14 +2,15 @@
 ### Una herramienta de línea de comando (CLI) para automatizar tareas de Power BI
 ---
 
-La idea es ir incorporando comandos para automatizar diferentes tareas. Por ahora tiene dos:
+La idea es ir incorporando comandos para automatizar diferentes tareas. 
+
+Por ahora tiene estos comandos:
 
 - [comando `dax`](#comando-dax)
 - [comando `daxdif`](#comando-daxdif)
+- [comando `fabric`](#comando-fabric)
 
 `pbicmd` está hecho con Python y es de código abierto.
-
-En este momento todo el código está en un solo fichero, para mantenerlo simple, pero la intención es ir separando los comandos en diferentes módulos.
 
 También se distribuye como un ejecutable EXE de Windows para que se pueda utilizar sin tener que instalar Python.
 
@@ -28,43 +29,7 @@ Si ejecutamos `pbicmd.exe` sin parámetros, obtenemos la ayuda con los comandos 
 ```
 ./pbicmd.exe 
 ```
-![](doc/img//pbicmd-v0.2.0-help.png)
-
-Más adelante hay una sección con los comandos disponibles (solo dos comandos por ahora :) pero antes hablaremos de la autenticación.
-
-## Autenticación
-
-Para algunos comandos es necesario autenticarse con el servicio de Power BI y esto se puede hacer de varias maneras.
-
-#### Autenticación interactiva
-Esta autenticación se utiliza cuando ejecutamos `pbicmd` manualmente. Se abrirá el navegador por defecto con la página de autenticación de Microsoft donde debemos indicar nuestras credenciales de la misma manera que lo haríamos si entráramos al servicio de Power BI. Cuando la autenticación sea exitosa podemos regresar a la línea de comando donde veremos que `pbicmd` completa la ejecución del comando.
-
-#### Autenticación con entidad de servicio
-Esta autenticación se recomienda cuando `pbicmd` se va a ejecutar de manera automática. En lugar de utilizar un usuario y una contraseña hay que crear en Azure una entidad de servicio y luego dar acceso a dicha entidad de servicio a un área de trabajo de Power BI.
-
-En esta página de la documentación de Microsoft se describe el proceso (para este caso interesa hasta el paso 4): https://learn.microsoft.com/es-es/power-bi/developer/embedded/embed-service-principal#step-1---create-a-microsoft-entra-app
-
-Para autenticarse se emplean dos parámetros de dicha entidad de servicio: el ID de cliente y el secreto de cliente y además hay que indicar el tenant o dominio en Azure, que debe ser el mismo de Power BI.
-
-Estos tres parámetros se deben asignar a las siguientes variables del entorno antes de ejecutar `pbicmd`:
-
-- AZURE_CLIENT_ID
-- AZURE_CLIENT_SECRET
-- AZURE_TENANT_ID
-
-Por ejemplo, en PowerShell se puede hacer así:
-```
-    $env:AZURE_CLIENT_ID = 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
-    $env:AZURE_CLIENT_SECRET = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
-    $env:AZURE_TENANT_ID = 'midominio.com'   
-```
-
-Si cuando se ejecuta `pbicmd` detecta estas variables del entorno, utilizará la entidad de servicio en lugar de la autenticación interactiva.
-
-#### Otros métodos de autenticación
-Para escenarios más avanzados se pueden utilizar otros métodos de autenticación.
-
-`pbicmd` utiliza para la autenticación la librería [azure-identity](https://github.com/Azure/azure-sdk-for-python/tree/main/sdk/identity/azure-identity) y en específico la clase DefaultAzureCredential que es quien maneja los dos métodos de autenticación que hemos comentado anteriormente, pero también admite otros métodos, que se pueden consultar en la documentación de la librería: https://github.com/Azure/azure-sdk-for-python/tree/main/sdk/identity/azure-identity#defaultazurecredential
+![](doc/img//pbicmd-v0.3.0-help.png)
 
 
 ## Comandos
@@ -87,6 +52,10 @@ Podemos imprimir la ayuda de este comando de la siguiente manera:
 ./pbicmd.exe dax --help
 ```
 
+Este comando necesita autenticación en el servicio de Power BI, por lo que te invito a leer más abajo las [opciones de autenticación disponibles](#autenticación).
+
+Si lo ejecutas manualmente se abrirá el navegador por defecto con la página de autenticación de Microsoft.
+
 Para implementar este comando se utiliza la [API REST de Power BI](https://learn.microsoft.com/es-es/rest/api/power-bi/datasets/execute-queries) que tiene algunas limitaciones, entre las que se encuentran:
 - Una consulta por llamada API.
 - Una solicitud de tabla por consulta.
@@ -95,6 +64,7 @@ Para implementar este comando se utiliza la [API REST de Power BI](https://learn
 - Hay un límite de 120 solicitudes de consulta por minuto por usuario, independientemente del conjunto de datos consultado.
 
 Estas limitaciones no son un freno en muchos escenarios y como mencionamos antes, tiene la gran ventaja de que funciona con una licencia Pro.
+
 
 La consulta DAX tiene que estar guardada en un fichero, que recomendamos que tenga la extensión .dax y que podríamos crear con la herramienta externa [DAX Studio](https://daxstudio.org/) o con la vista de consulta DAX de Power BI Desktop, si tenemos una versión de Noviembre 2023 o superior.
 
@@ -148,6 +118,10 @@ Podemos imprimir la ayuda de este comando de la siguiente manera:
 ./pbicmd.exe daxdif --help
 ```
 
+Este comando necesita autenticación en el servicio de Power BI, por lo que te invito a leer más abajo las [opciones de autenticación disponibles](#autenticación).
+
+Si lo ejecutas manualmente se abrirá el navegador por defecto con la página de autenticación de Microsoft.
+
 Para implementar este comando, se utiliza la API REST de Power BI, la cual tiene algunas limitaciones, como se menciona en la descripción del comando `dax`.
 
 La consulta DAX tiene que estar guardada en un fichero, que recomendamos que tenga la extensión .dax, y 
@@ -196,3 +170,114 @@ Cuando se comparan números decimales puede que haya pequeñas diferencias que n
 
 Por defecto, se redondea a 4 lugares decimales, y se puede cambiar con el parámetro `-dp`.
 La tolerancia por defecto es 0.01, y se puede cambiar con el parámetro `-to`.
+
+### Comando `fabric`
+
+Este comando permite manejar las capacidades de Microsoft Fabric mediante varios subcomandos.
+
+Puedes imprimir la ayuda de este comando de la siguiente manera:
+```
+./pbicmd.exe fabric --help
+```
+
+Para utilizar los subcomandos necesitas un usuario o una entidad de servicio con acceso a Azure y con el permiso de colaborador en las capacidades Fabric que quieras manejar.
+
+Te invito a leer más abajo las [opciones de autenticación disponibles](#autenticación).
+
+Si lo ejecutas manualmente se abrirá el navegador por defecto con la página de autenticación de Microsoft.
+
+
+#### Subcomando `capacities`
+
+Con este subcomando del comando `fabric` puedes obtener un listado de las capacidades Fabric a las que tengas acceso en una subscripción de Azure.
+
+Puedes imprimir la ayuda de este subcomando de la siguiente manera:
+```
+./pbicmd.exe fabric capacities --help
+```
+Solo requiere el parámetro `-as` para indicar el ID de la subscripción a Azure. 
+
+Por ejemplo:
+```
+./pbicmd.exe fabric capacities -as dddddddd-dddd-dddd-dddd-dddddddddddd
+```
+
+Lo que devolverá un listado como el de la imagen siguiente:
+
+![](doc/img//pbicmd-fabric-capacities.png)
+
+donde se ven dos capacidades F2 que están en pausa. El valor del ID, que es una cadena de texto larga, se utiliza en el resto de los subcamandos para pausar, reanudar o cambiar el SKU de una capacidad.
+
+#### Subcomando `resume`
+
+Con este subcomando del comando `fabric` puedes reanudar una capacidad que esté en pausa.
+
+Puedes imprimir la ayuda de la siguiente manera:
+```
+./pbicmd.exe fabric resume --help
+```
+
+Tiene el parámetro requerido `-c` para indicar el ID de la capacidad, que es la cadena de texto larga devuelta por el subcomando `capacities`.
+
+También tiene un parámetro opcional `-k` para indicar un SKU al que se debe cambiar la capacidad antes de reanudarla, y que admite los valores `F2`, `F4`, y así hasta `F2048`.
+
+La capacidad puede demorar unos segundos en cambiar de estado, por lo que al ejecutar este subcomando se dará la orden de reanudar la capacidad y se esperarán 15 segundos y entonces se consultará el estado de la capacidad imprimiendo los detalles para que puedas comprobar visualmente si cambió el estado, en caso de que estés ejecutandolo manualmente.
+
+#### Subcomando `suspend`
+
+Con este subcomando del comando `fabric` puedes pausar una capacidad que esté en funcionamiento. 
+
+Puedes imprimir la ayuda de la siguiente manera:
+```
+./pbicmd.exe fabric suspend --help
+```
+
+Solo tiene el parámetro requerido `-c` para indicar el ID de la capacidad, que es la cadena de texto larga devuelta por el subcomando `capacities`.
+
+La capacidad puede demorar unos segundos en cambiar de estado, por lo que al ejecutar este subcomando se dará la orden de reanudar la capacidad y se esperarán 15 segundos y entonces se consultará el estado de la capacidad imprimiendo los detalles para que puedas comprobar visualmente si cambió el estado, en caso de que estés ejecutandolo manualmente.
+
+#### Subcomando `sku`
+
+Con este subcomando puedes cambiar el SKU a una capacidad.
+
+Puedes imprimir la ayuda de esta manera:
+```
+./pbicmd.exe fabric sku --help
+```
+
+Solo tiene el parámetro requerido `-k` para indicar el SKU y que admite los valores `F2`, `F4`, y así hasta `F2048`.
+
+
+## Autenticación
+
+Para algunos comandos es necesario autenticarse con el servicio de Power BI y esto se puede hacer de varias maneras.
+
+#### Autenticación interactiva
+Esta autenticación se utiliza cuando ejecutamos `pbicmd` manualmente. Se abrirá el navegador por defecto con la página de autenticación de Microsoft donde debemos indicar nuestras credenciales de la misma manera que lo haríamos si entráramos al servicio de Power BI. Cuando la autenticación sea exitosa podemos regresar a la línea de comando donde veremos que `pbicmd` completa la ejecución del comando.
+
+#### Autenticación con entidad de servicio
+Esta autenticación se recomienda cuando `pbicmd` se va a ejecutar de manera automática. En lugar de utilizar un usuario y una contraseña hay que crear en Azure una entidad de servicio y luego dar acceso a dicha entidad de servicio a un área de trabajo de Power BI.
+
+En esta página de la documentación de Microsoft se describe el proceso (para este caso interesa hasta el paso 4): https://learn.microsoft.com/es-es/power-bi/developer/embedded/embed-service-principal#step-1---create-a-microsoft-entra-app
+
+Para autenticarse se emplean dos parámetros de dicha entidad de servicio: el ID de cliente y el secreto de cliente y además hay que indicar el tenant o dominio en Azure, que debe ser el mismo de Power BI.
+
+Estos tres parámetros se deben asignar a las siguientes variables del entorno antes de ejecutar `pbicmd`:
+
+- AZURE_CLIENT_ID
+- AZURE_CLIENT_SECRET
+- AZURE_TENANT_ID
+
+Por ejemplo, en PowerShell se puede hacer así:
+```
+    $env:AZURE_CLIENT_ID = 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
+    $env:AZURE_CLIENT_SECRET = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+    $env:AZURE_TENANT_ID = 'midominio.com'   
+```
+
+Si cuando se ejecuta `pbicmd` detecta estas variables del entorno, utilizará la entidad de servicio en lugar de la autenticación interactiva.
+
+#### Otros métodos de autenticación
+Para escenarios más avanzados se pueden utilizar otros métodos de autenticación.
+
+`pbicmd` utiliza para la autenticación la librería [azure-identity](https://github.com/Azure/azure-sdk-for-python/tree/main/sdk/identity/azure-identity) y en específico la clase DefaultAzureCredential que es quien maneja los dos métodos de autenticación que hemos comentado anteriormente, pero también admite otros métodos, que se pueden consultar en la documentación de la librería: https://github.com/Azure/azure-sdk-for-python/tree/main/sdk/identity/azure-identity#defaultazurecredential

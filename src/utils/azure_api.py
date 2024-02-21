@@ -1,5 +1,7 @@
 from azure.identity import DefaultAzureCredential
 
+AZURE_MANAGEMENT_SCOPE = "https://management.azure.com/.default"
+
 
 def get_access_token(scope: str) -> str:
     """Se conecta a la API de Azure para pedir un token que autorice el acceso a un scope

@@ -16,6 +16,7 @@ from typing_extensions import Annotated
 
 import commands.dax as dax
 import commands.daxdif as daxdif
+import commands.fabric as fabric
 
 
 app = typer.Typer(add_completion=False)
@@ -52,6 +53,7 @@ def callback(
 
 app.command(name="dax")(dax.dax_command)
 app.command(name="daxdif")(daxdif.daxdif_command)
+app.add_typer(fabric.app, name="fabric")
 
 
 if __name__ == "__main__":

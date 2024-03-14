@@ -9,6 +9,7 @@ Por ahora tiene estos comandos:
 - [comando `dax`](#comando-dax)
 - [comando `daxdif`](#comando-daxdif)
 - [comando `fabric`](#comando-fabric)
+- [comando `toparquet`](#comando-toparquet)
 
 `pbicmd` está hecho con Python y es de código abierto.
 
@@ -29,7 +30,7 @@ Si ejecutamos `pbicmd.exe` sin parámetros, obtenemos la ayuda con los comandos 
 ```
 ./pbicmd.exe 
 ```
-![](doc/img//pbicmd-v0.3.0-help.png)
+![](doc/img//pbicmd-v0.4.0-help.png)
 
 
 ## Comandos
@@ -43,7 +44,7 @@ Se puede imprimir la ayuda de un comando de la siguiente manera:
 donde &lt;comando&gt; sería el nombre del comando.
 
 
-### Comando `dax` <a id="comando-dax"></a>
+### Comando `dax`
 
 Este comando permite ejecutar una consulta DAX sobre un modelo semántico publicado en el servicio de Power BI y guardar el resultado en un fichero CSV o Parquet. Funciona con una licencia Pro.
 
@@ -246,6 +247,73 @@ Puedes imprimir la ayuda de esta manera:
 ```
 
 Solo tiene el parámetro requerido `-k` para indicar el SKU y que admite los valores `F2`, `F4`, y así hasta `F2048`.
+
+
+### Comando `toparquet`
+
+Este comando convierte archivos CSV a Parquet. Puede convertir un solo archivo o todos los archivos de una carpeta que cumplan con un patrón.
+
+Podemos imprimir la ayuda de este comando de la siguiente manera:
+```
+./pbicmd.exe toparquet --help
+```
+
+El único parámetro requerido es la ruta al origen que puede ser un archivo CSV o una carpeta con archivos CSV.
+
+Por ejemplo, si ejecutamos:
+```
+./pbicmd.exe toparquet c:\taxis\yellow_tripdata_2021-01.csv
+```
+
+Se creará el archivo `c:\taxis\yellow_tripdata_2021-01.parquet` en la misma carpeta del archivo original.
+
+Para crear el archivo Parquet en otra carpeta, hay que utilizar el parámetro `-o`, por ejemplo:
+
+```
+./pbicmd.exe toparquet c:\taxis\yellow_tripdata_2021-01.csv -o c:\taxis\parquet
+```
+
+Y se creará el archivo `yellow_tripdata_2021-01.parquet` en la carpeta `c:\taxis\parquet`.
+
+La carpeta tiene que existir.
+
+El parámetro `-o` también puede ser una ruta a un archivo si se quiere que el nombre del archivo Parquet sea diferente que el nombre del archivo CSV.
+
+```
+./pbicmd.exe toparquet c:\taxis\yellow_tripdata_2021-01.csv -o c:\taxis\parquet\trips_2021-01.parquet
+```
+
+El origen también puede ser la ruta a una carpeta y en ese caso se convertirán a Parquet todos los archivos de la carpeta.
+
+```
+./pbicmd.exe toparquet c:\taxis
+```
+
+Los archivos Parquet resultantes se crearán en la misma carpeta y con el mismo nombre del archivo original pero cambiando la extensión a .parquet.
+
+Se puede utilizar el parámetro `-o` para crear los archivos Parquet en otra carpeta.
+
+```
+./pbicmd.exe toparquet c:\taxis -o c:\taxis\parquet
+```
+
+En este caso en que el origen es una carpeta, sólo se procesan los archivos con la extensión `*.csv`.
+
+Es posible cambiar este patrón de búsqueda utilizando el parámetro `-p`. 
+
+Por ejemplo:
+
+```
+./pbicmd.exe toparquet c:\taxis -p yellow_tripdata_*.csv
+```
+
+El delimitador de los archivos CSV se detecta de manera automática leyendo una muestra de cada archivo de origen. Si por alguna razón no se pudiera detectar, recibirá un mensaje de error y deberá indicar el delimitador utilizando el parámetro `-d`. 
+
+Por ejemplo:
+
+```
+./pbicmd.exe toparquet c:\taxis -d ";"
+```
 
 
 ## Autenticación

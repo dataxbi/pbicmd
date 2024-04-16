@@ -25,10 +25,10 @@ def convert_csv_to_delta(
 ):
     if csv_delimiter is None:
         try:
-            with open(csv_file, newline="") as csvfile:
+            with open(csv_file, newline="", encoding="utf8") as csvfile:
                 dialect = csv.Sniffer().sniff(csvfile.read(10_000))
                 csv_delimiter = dialect.delimiter
-        except:
+        except Exception as ex:
             raise CsvDelimiterNotDetected(
                 f"no se pudo detectar el deimitador de celdas del archivo csv: {csv_file}"
             )

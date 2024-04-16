@@ -10,6 +10,7 @@ Por ahora tiene estos comandos:
 - [comando `daxdif`](#comando-daxdif)
 - [comando `fabric`](#comando-fabric)
 - [comando `toparquet`](#comando-toparquet)
+- [comando `todelta`](#comando-todelta)
 
 `pbicmd` está hecho con Python y es de código abierto.
 
@@ -30,7 +31,7 @@ Si ejecutamos `pbicmd.exe` sin parámetros, obtenemos la ayuda con los comandos 
 ```
 ./pbicmd.exe 
 ```
-![](doc/img//pbicmd-v0.4.0-help.png)
+![](doc/img//pbicmd-v0.5.0-help.png)
 
 
 ## Comandos
@@ -315,6 +316,64 @@ Por ejemplo:
 ./pbicmd.exe toparquet c:\taxis -d ";"
 ```
 
+### Comando `todelta`
+
+Este comando convierte archivos CSV a una tabla Delta (https://delta.io/). Puede convertir un solo archivo o todos los archivos de una carpeta que cumplan con un patrón.
+
+Podemos imprimir la ayuda de este comando de la siguiente manera:
+```
+./pbicmd.exe todelta --help
+```
+
+Requiere dos parámetros: 
+- la ruta al origen, que puede ser un archivo CSV o una carpeta con archivos CSV
+- la ruta a la carpeta donde se va a guardar la tabla Delta
+
+Por ejemplo, si ejecutamos:
+```
+./pbicmd.exe todelta c:\taxis\yellow_tripdata_2021-01.csv c:\taxis_delta
+```
+
+Se creará la carpeta `c:\taxis_delta` que contendrá los datos del CSV pero en formato Delta.
+
+
+El origen también puede ser la ruta a una carpeta y en ese caso se convertirán a Delta todos los archivos de la carpeta con extensión `csv`.
+
+```
+./pbicmd.exe todelta c:\taxis c:\taxis_delta
+```
+
+Es posible indicar un patrón para filtrar los archivos de la carpeta, utilizando el parámetro `-p`. 
+
+Por ejemplo:
+
+```
+./pbicmd.exe todelta c:\taxis c:\taxis_delta -p yellow_tripdata_*.csv
+```
+
+El delimitador de los archivos CSV se detecta de manera automática leyendo una muestra de cada archivo de origen. Si por alguna razón no se pudiera detectar, recibirá un mensaje de error y deberá indicar el delimitador utilizando el parámetro `-d`. 
+
+Por ejemplo:
+
+```
+./pbicmd.exe todelta c:\taxis c:\taxis_delta -d ";"
+```
+
+Si la carpeta de destino de la tabla Delta no existe, se creará. 
+
+Si la carpeta de destino existe, y ya contiene una tabla Delta, tendrá que utilizar el parámetro `-dm` para indicar si quiere sobrescribir los datos o si los quiere anexar.
+
+Ejemplo de sobrescribir: 
+
+```
+./pbicmd.exe todelta c:\taxis c:\taxis_delta -md overwrite
+```
+
+Ejemplo de anexar:
+
+```
+./pbicmd.exe todelta c:\taxis c:\taxis_delta -md append
+```
 
 ## Autenticación
 

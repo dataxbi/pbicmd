@@ -1,12 +1,20 @@
 import sys
 from pathlib import Path
 import csv
+import json
+from enum import StrEnum
 
 import typer
 from typing_extensions import Annotated
 from pyarrow import csv as pacsv, parquet
+import pandas as pd
 from rich.console import Console
 from rich.panel import Panel
+
+
+class InputFormat(StrEnum):
+    csv = "csv"
+    json = "json"
 
 
 class CsvDelimiterNotDetected(Exception):
@@ -30,6 +38,24 @@ def convert_csv_to_parquet(csv_file, parquet_file, delimiter):
     parquet.write_table(t, parquet_file)
 
 
+def convert_json_to_parquet(json_file, parquet_file):
+    json_file_path = Path(json_file)
+    try:
+        json_text = json_file_path.read_text(encoding="utf-8")
+    except UnicodeDecodeError:
+        json_text = json_file_path.read_text()
+
+    data = json.loads(json_text)
+    df = pd.json_normalize(data)
+
+    # Si alguna columna esta vacía, el tipo de datos será Null que puede no ser compatible con parquet
+    # por tanto se buscan dichas columnas y se le cambia el tipo de dato a string.
+    cols_with_all_nulls = df.columns[df.isnull().all()]
+    df[cols_with_all_nulls] = df[cols_with_all_nulls].astype("string")
+
+    df.to_parquet(parquet_file)
+
+
 def print_error(error_message):
     Console().print(
         Panel(error_message, title="Error", title_align="left", border_style="red")
@@ -40,7 +66,7 @@ def toparquet_command(
     input: Annotated[
         Path,
         typer.Argument(
-            help="Ruta de origen a un archivo CSV o una carpeta con archivos CSV.",
+            help="Ruta de origen a un archivo CSV o JSON o una carpeta con archivos CSV o JSON.",
             show_default=False,
             exists=True,
             file_okay=True,
@@ -50,14 +76,24 @@ def toparquet_command(
             resolve_path=True,
         ),
     ],
+    input_format: Annotated[
+        InputFormat,
+        typer.Option(
+            "--inputformat",
+            "-f",
+            help="Formato de los archivos de entrada.",
+            case_sensitive=False,
+        ),
+    ] = InputFormat.csv,
     input_pattern: Annotated[
         str,
         typer.Option(
             "--pattern",
             "-p",
-            help="Patrón para filtrar los archivos CSV cuando se indique una carpeta. Por ejemplo: yello_tripdata_*.csv",
+            help="Patrón para filtrar los archivos de entrada cuando se indique una carpeta. Por ejemplo: yello_tripdata_*.csv. Por defecto se utiliza *.csv o *.json dependiendo del formato de entrada.",
+            show_default=False,
         ),
-    ] = "*.csv",
+    ] = None,
     output: Annotated[
         Path,
         typer.Option(
@@ -80,9 +116,15 @@ def toparquet_command(
         ),
     ] = None,
 ):
-    """Convierte archivos CSV a Parquet.
+    """Convierte archivos CSV o JSON a Parquet.
     Puede convertir un solo archivo o todos los archivos de una carpeta que cumplan con un patrón.
     """
+
+    if input_pattern is None:
+        if input_format == InputFormat.csv:
+            input_pattern = "*.csv"
+        else:
+            input_pattern = "*.json"
 
     if input.is_file():
         output_file = input.with_suffix(".parquet")
@@ -101,7 +143,10 @@ def toparquet_command(
         print(f"Archivo destino: {output_file}")
 
         try:
-            convert_csv_to_parquet(input, output_file, delimiter)
+            if input_format == InputFormat.csv:
+                convert_csv_to_parquet(input, output_file, delimiter)
+            else:
+                convert_json_to_parquet(input, output_file)
 
         except CsvDelimiterNotDetected:
             print_error(
@@ -111,7 +156,7 @@ def toparquet_command(
 
         except:
             print_error(
-                "Ocurrió un error leyendo el archivo de origen o escribiendo hacia el archivo de destino. Compruebe que el origen es un arhico CSV y que tiene permisos para crear o sobrescribir el archico de destino."
+                "Ocurrió un error leyendo el archivo de origen o escribiendo hacia el archivo de destino. Compruebe que el origen es un arhico CSV o JSON y que tiene permisos para crear o sobrescribir el archico de destino."
             )
             sys.exit(2)
 
@@ -132,11 +177,15 @@ def toparquet_command(
 
         for input_file in Path(input).glob(input_pattern):
             output_file = output / input_file.with_suffix(".parquet").name
+            print()
             print(f"Archivo origen: {input_file}")
             print(f"Archivo destino: {output_file}")
 
             try:
-                convert_csv_to_parquet(input_file, output_file, delimiter)
+                if input_format == InputFormat.csv:
+                    convert_csv_to_parquet(input_file, output_file, delimiter)
+                else:
+                    convert_json_to_parquet(input_file, output_file)
 
             except CsvDelimiterNotDetected:
                 print_error(

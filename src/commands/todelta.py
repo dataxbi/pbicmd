@@ -2,10 +2,12 @@ import sys
 from enum import StrEnum
 from pathlib import Path
 import csv
+import json
 
 import typer
 from typing_extensions import Annotated
 from pyarrow import csv as pacsv
+import pandas as pd
 from deltalake import write_deltalake
 from rich.console import Console
 from rich.panel import Panel
@@ -16,16 +18,21 @@ class DeltaMode(StrEnum):
     overwrite = "overwrite"
 
 
+class InputFormat(StrEnum):
+    csv = "csv"
+    json = "json"
+
+
 class CsvDelimiterNotDetected(Exception):
     pass
 
 
 def convert_csv_to_delta(
-    csv_file, delta_folder, delta_mode="error", schema_mode=None, csv_delimiter=None
+    csv_file, delta_folder, delta_mode="error", schema_mode="merge", csv_delimiter=None
 ):
     if csv_delimiter is None:
         try:
-            with open(csv_file, newline="", encoding="utf8") as csvfile:
+            with open(csv_file, newline="", encoding="utf-8") as csvfile:
                 dialect = csv.Sniffer().sniff(csvfile.read(10_000))
                 csv_delimiter = dialect.delimiter
         except Exception as ex:
@@ -36,7 +43,31 @@ def convert_csv_to_delta(
     parse_options = pacsv.ParseOptions(delimiter=csv_delimiter)
 
     t = pacsv.read_csv(csv_file, parse_options=parse_options)
-    write_deltalake(delta_folder, t, mode=delta_mode, schema_mode=schema_mode)
+    write_deltalake(
+        delta_folder, t, mode=delta_mode, schema_mode=schema_mode, engine="rust"
+    )
+
+
+def convert_json_to_delta(
+    json_file, delta_folder, delta_mode="error", schema_mode="merge"
+):
+    json_file_path = Path(json_file)
+    try:
+        json_text = json_file_path.read_text(encoding="utf-8")
+    except UnicodeDecodeError:
+        json_text = json_file_path.read_text()
+
+    data = json.loads(json_text)
+    df = pd.json_normalize(data)
+
+    # Si alguna columna esta vacía, el tipo de datos será Null que no es compatible con Delta
+    # por tanto se buscan dichas columnas y se le cambia el tipo de dato a string.
+    cols_with_all_nulls = df.columns[df.isnull().all()]
+    df[cols_with_all_nulls] = df[cols_with_all_nulls].astype("string")
+
+    write_deltalake(
+        delta_folder, df, mode=delta_mode, schema_mode=schema_mode, engine="rust"
+    )
 
 
 def print_error(error_message):
@@ -49,7 +80,7 @@ def todelta_command(
     input: Annotated[
         Path,
         typer.Argument(
-            help="Ruta de origen a un archivo CSV o una carpeta con archivos CSV.",
+            help="Ruta de origen a un archivo CSV o JSON o una carpeta con archivos CSV o JSON.",
             show_default=False,
             exists=True,
             file_okay=True,
@@ -69,6 +100,15 @@ def todelta_command(
             resolve_path=True,
         ),
     ],
+    input_format: Annotated[
+        InputFormat,
+        typer.Option(
+            "--inputformat",
+            "-f",
+            help="Formato de los archivos de entrada.",
+            case_sensitive=False,
+        ),
+    ] = InputFormat.csv,
     delta_mode: Annotated[
         DeltaMode,
         typer.Option(
@@ -84,9 +124,10 @@ def todelta_command(
         typer.Option(
             "--pattern",
             "-p",
-            help="Patrón para filtrar los archivos CSV cuando se indique una carpeta. Por ejemplo: yello_tripdata_*.csv",
+            help="Patrón para filtrar los archivos de entrada cuando se indique una carpeta. Por ejemplo: yello_tripdata_*.csv. Por defecto se utiliza *.csv o *.json dependiendo del formato de entrada.",
+            show_default=False,
         ),
-    ] = "*.csv",
+    ] = None,
     delimiter: Annotated[
         str,
         typer.Option(
@@ -97,16 +138,25 @@ def todelta_command(
         ),
     ] = None,
 ):
-    """Convierte archivos CSV a una tabla Delta.
+    """Convierte archivos CSV o JSON a una tabla Delta.
     Puede convertir un solo archivo o todos los archivos de una carpeta que cumplan con un patrón.
     """
 
+    # Por defecto, si la tabla Delta ya existe, no se puede sobreescribir.
     if delta_mode is None:
         delta_mode = "error"
 
-    schema_mode = None
+    # Por defecto, se aceptan cambios en el esquema
+    schema_mode = "merge"
+    # Pero si se indicó que se sobreescriba la tabla, se sobrescribe el esquema
     if delta_mode == DeltaMode.overwrite:
         schema_mode = "overwrite"
+
+    if input_pattern is None:
+        if input_format == InputFormat.csv:
+            input_pattern = "*.csv"
+        else:
+            input_pattern = "*.json"
 
     if input.is_file():
 
@@ -119,7 +169,10 @@ def todelta_command(
         print()
 
         try:
-            convert_csv_to_delta(input, output, delta_mode, schema_mode, delimiter)
+            if input_format == InputFormat.csv:
+                convert_csv_to_delta(input, output, delta_mode, schema_mode, delimiter)
+            else:
+                convert_json_to_delta(input, output, delta_mode, schema_mode)
 
         except CsvDelimiterNotDetected:
             print_error(
@@ -136,8 +189,8 @@ def todelta_command(
         except Exception as ex:
             print_error(
                 "Ocurrió un error leyendo el archivo de origen o escribiendo hacia la tabla Delta."
-                + "\n\nCompruebe que el origen es un arhivo CSV y que tiene permisos para crear o sobrescribir en la carpeta de destino."
-                + "\nSi la tabla Delta ya existía, compruebe que el esquema de la tabla coincide con el de los archivos CSV."
+                + "\n\nCompruebe que el origen es un arhivo CSV o JSON y que tiene permisos para crear o sobrescribir en la carpeta de destino."
+                + "\nSi la tabla Delta ya existía, utiliza el parámetro -dm para indicar si quiere sobrescribir o anexar los nuevos datos."
                 + "\n\nA continuación puedes ver el mensaje de error original:"
                 + f"\n\n{ex}"
             )
@@ -158,21 +211,24 @@ def todelta_command(
         for input_file in Path(input).glob(input_pattern):
             print(f"Procesando el archivo de origen: {input_file}")
 
-            if is_first_file:
-                is_first_file = False
-            else:
+            if not is_first_file:
                 # Se fuerza el modo "append" a partir del segundo archivo de la carpeta, sin importar cual fue el modo escogido por el usuario.
                 # Si el modo era "error" y la tabla ya existía, ya dió el error con el primer archivo.
                 # Si el modo era "overwrite", ya el primer archivo sobrescribió la tabla Delta
                 delta_mode = "append"
-                # También se fuerza a que no se pueda cambiar el esquema a partir del segun archivo
-                schema_mode = None
+                # También se fuerza a que se pueda cambiar el esquema a partir del segun archivo
+                schema_mode = "merge"
+
+            is_first_file = False
 
             try:
 
-                convert_csv_to_delta(
-                    input_file, output, delta_mode, schema_mode, delimiter
-                )
+                if input_format == InputFormat.csv:
+                    convert_csv_to_delta(
+                        input_file, output, delta_mode, schema_mode, delimiter
+                    )
+                else:
+                    convert_json_to_delta(input_file, output, delta_mode, schema_mode)
 
             except CsvDelimiterNotDetected:
                 print_error(
@@ -189,8 +245,8 @@ def todelta_command(
             except Exception as ex:
                 print_error(
                     "Ocurrió un error leyendo el archivo de origen o escribiendo hacia la tabla Delta."
-                    + "\n\nCompruebe que el origen es un arhivo CSV y que tiene permisos para crear o sobrescribir en la carpeta de destino."
-                    + "\nSi la tabla Delta ya existía, compruebe que el esquema de la tabla coincide con el de los archivos CSV."
+                    + "\n\nCompruebe que el origen es un arhivo CSV o JSON y que tiene permisos para crear o sobrescribir en la carpeta de destino."
+                    + "\nSi la tabla Delta ya existía, utiliza el parámetro -dm para indicar si quiere sobrescribir o anexar los nuevos datos."
                     + "\n\nA continuación puedes ver el mensaje de error original:"
                     + f"\n\n{ex}"
                 )
@@ -198,6 +254,6 @@ def todelta_command(
 
     else:
         print_error(
-            f'El origen "{input}" no es válido. Tiene que ser la ruta a un archivo CSV o a una carpeta que existan.'
+            f'El origen "{input}" no es válido. Tiene que ser la ruta a un archivo CSV o JSON o a una carpeta que existan.'
         )
         sys.exit(3)

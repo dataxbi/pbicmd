@@ -8,7 +8,7 @@ import typer
 from typing_extensions import Annotated
 from pyarrow import csv as pacsv
 import pandas as pd
-from deltalake import write_deltalake
+from deltalake import write_deltalake, DeltaTable
 from rich.console import Console
 from rich.panel import Panel
 
@@ -137,6 +137,33 @@ def todelta_command(
             show_default=False,
         ),
     ] = None,
+    delta_optimize: Annotated[
+        bool,
+        typer.Option(
+            "--deltaoptimize",
+            "-do",
+            help="Optimiza la tabla Delta, consolidando varios archivos Parquet pequeños en un archivo más grande.",
+            show_default=False,
+        ),
+    ] = False,
+    delta_vacuum: Annotated[
+        bool,
+        typer.Option(
+            "--deltavacuum",
+            "-dv",
+            help="Elimina los archivos que han sido marcados para borrar, con un período de retención de 7 días.",
+            show_default=False,
+        ),
+    ] = False,
+    delta_vacuum0: Annotated[
+        bool,
+        typer.Option(
+            "--deltavacuum0",
+            "-dv0",
+            help="Elimina todos los archivos que han sido marcados para borrar, sin ningún período de retención.",
+            show_default=False,
+        ),
+    ] = False,
 ):
     """Convierte archivos CSV o JSON a una tabla Delta.
     Puede convertir un solo archivo o todos los archivos de una carpeta que cumplan con un patrón.
@@ -146,7 +173,7 @@ def todelta_command(
     if delta_mode is None:
         delta_mode = "error"
 
-    # Por defecto, se aceptan cambios en el esquema
+    # Por defecto, se aceptan cambios en l esquema
     schema_mode = "merge"
     # Pero si se indicó que se sobreescriba la tabla, se sobrescribe el esquema
     if delta_mode == DeltaMode.overwrite:
@@ -257,3 +284,29 @@ def todelta_command(
             f'El origen "{input}" no es válido. Tiene que ser la ruta a un archivo CSV o JSON o a una carpeta que existan.'
         )
         sys.exit(3)
+
+    if delta_optimize or delta_vacuum or delta_vacuum0:
+
+        dt = DeltaTable(output)
+
+        if delta_optimize:
+            ro = dt.optimize()
+            print()
+            print(
+                f"La tabla Delta fue optimizada. {ro['numFilesRemoved']} archivo(s) marcado(s) para borrar. {ro['numFilesAdded']} archivo(s) agregado(s)."
+            )
+
+        if delta_vacuum0:
+            deleted_files = dt.vacuum(
+                dry_run=False, enforce_retention_duration=False, retention_hours=0
+            )
+            print()
+            print(
+                f"Operación VACUUM sin ningún período de retención aplicada a la tabla Delta. {len(deleted_files)} archivo(s) eliminado(s)."
+            )
+        elif delta_vacuum:
+            deleted_files = dt.vacuum(dry_run=False)
+            print()
+            print(
+                f"Operación VACUUM con 7 días de retención aplicada a la tabla Delta. {len(deleted_files)} archivo(s) eliminado(s)."
+            )

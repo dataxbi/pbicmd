@@ -252,14 +252,14 @@ Solo tiene el parámetro requerido `-k` para indicar el SKU y que admite los val
 
 ### Comando `toparquet`
 
-Este comando convierte archivos CSV a Parquet. Puede convertir un solo archivo o todos los archivos de una carpeta que cumplan con un patrón.
+Este comando convierte archivos CSV o JSON a Parquet. Puede convertir un solo archivo o todos los archivos de una carpeta que cumplan con un patrón.
 
 Podemos imprimir la ayuda de este comando de la siguiente manera:
 ```
 ./pbicmd.exe toparquet --help
 ```
 
-El único parámetro requerido es la ruta al origen que puede ser un archivo CSV o una carpeta con archivos CSV.
+El único parámetro requerido es la ruta al origen que puede ser un archivo CSV o JSON o una carpeta con archivos CSV o JSON.
 
 Por ejemplo, si ejecutamos:
 ```
@@ -278,7 +278,7 @@ Y se creará el archivo `yellow_tripdata_2021-01.parquet` en la carpeta `c:\taxi
 
 La carpeta tiene que existir.
 
-El parámetro `-o` también puede ser una ruta a un archivo si se quiere que el nombre del archivo Parquet sea diferente que el nombre del archivo CSV.
+El parámetro `-o` también puede ser una ruta a un archivo si se quiere que el nombre del archivo Parquet sea diferente que el nombre del archivo CSV o JSON.
 
 ```
 ./pbicmd.exe toparquet c:\taxis\yellow_tripdata_2021-01.csv -o c:\taxis\parquet\trips_2021-01.parquet
@@ -315,6 +315,16 @@ Por ejemplo:
 ```
 ./pbicmd.exe toparquet c:\taxis -d ";"
 ```
+
+El formato por defecto de los archivos de origen es CSV, pero se puede cambiar a JSON con el parámetro `-f`:
+
+```
+./pbicmd.exe toparquet c:datos\json -f json
+
+```
+
+En este caso el patrón por defecto para los archivos de origen será `*.json`
+
 
 ### Comando `todelta`
 
@@ -359,6 +369,16 @@ Por ejemplo:
 ./pbicmd.exe todelta c:\taxis c:\taxis_delta -d ";"
 ```
 
+El formato por defecto de los archivos de origen es CSV, pero se puede cambiar a JSON con el parámetro `-f`:
+
+```
+./pbicmd.exe todelta c:datos\json c:\datos\json_delta -f json
+
+```
+
+En este caso el patrón por defecto para los archivos de origen será `*.json`
+
+
 Si la carpeta de destino de la tabla Delta no existe, se creará. 
 
 Si la carpeta de destino existe, y ya contiene una tabla Delta, tendrá que utilizar el parámetro `-dm` para indicar si quiere sobrescribir los datos o si los quiere anexar.
@@ -374,6 +394,13 @@ Ejemplo de anexar:
 ```
 ./pbicmd.exe todelta c:\taxis c:\taxis_delta -md append
 ```
+
+Utilizando el parámetro `-fnc` es posible añadir una columna a la tabla Delta que contenga el nombre de cada archivo de origen, sin la extensión:
+
+```
+./pbicmd.exe todelta c:\taxis c:\taxis_delta -fnc nombre_archivo
+```
+
 
 ## Autenticación
 

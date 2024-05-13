@@ -11,6 +11,7 @@ Por ahora tiene estos comandos:
 - [comando `fabric`](#comando-fabric)
 - [comando `toparquet`](#comando-toparquet)
 - [comando `todelta`](#comando-todelta)
+- [comando `delta`](#comando-delta)
 
 `pbicmd` está hecho con Python y es de código abierto.
 
@@ -399,6 +400,36 @@ Utilizando el parámetro `-fnc` es posible añadir una columna a la tabla Delta 
 
 ```
 ./pbicmd.exe todelta c:\taxis c:\taxis_delta -fnc nombre_archivo
+```
+
+### Comando `delta`
+
+Este permite optimizar una tabla Delta (https://delta.io/). 
+
+Podemos imprimir la ayuda de este comando de la siguiente manera:
+```
+./pbicmd.exe delta --help
+```
+
+Requiere dos parámetros: 
+- La ruta a la carpeta donde está la tabla Delta
+- Alguno de los subcomandos disponibles:
+  - `-do` Optimiza la tabla Delta consolidando varios archivos Parquet pequeños en un archivo más grandes. Es útil cuando hacemos actualizaciones incrementales con pocos datos. Esta operación puede tardar si hay muchos archivos que procesar.
+  - `-dv` Ejecuta la operación VACUUM para eliminar los archivos Parquet que han sido marcados para borrar, respetando el período de retención, que normalmente es de 7 días.
+  - `-dv0` Ejecuta la operación VACUUM, pero sin ningún período de retención.
+
+Ejemplos:
+
+```
+./pbicmd.exe delta c:/datos/tabla_delta -do
+```
+
+```
+./pbicmd.exe delta c:/datos/tabla_delta -dv
+```
+
+```
+./pbicmd.exe delta c:/datos/tabla_delta -dv0
 ```
 
 

@@ -7,8 +7,9 @@ import json
 import typer
 from typing_extensions import Annotated
 from pyarrow import csv as pacsv
+import pyarrow as pa
 import pandas as pd
-from deltalake import write_deltalake, DeltaTable
+from deltalake import write_deltalake
 from rich.console import Console
 from rich.panel import Panel
 
@@ -28,7 +29,12 @@ class CsvDelimiterNotDetected(Exception):
 
 
 def convert_csv_to_delta(
-    csv_file, delta_folder, delta_mode="error", schema_mode="merge", csv_delimiter=None
+    csv_file,
+    delta_folder,
+    delta_mode="error",
+    schema_mode="merge",
+    csv_delimiter=None,
+    file_name_column=None,
 ):
     if csv_delimiter is None:
         try:
@@ -43,13 +49,24 @@ def convert_csv_to_delta(
     parse_options = pacsv.ParseOptions(delimiter=csv_delimiter)
 
     t = pacsv.read_csv(csv_file, parse_options=parse_options)
+
+    # Añadiendo una fila con el nombre del archivo, sin la extensión.
+    if file_name_column is not None:
+        file_name = Path(csv_file).stem
+        new_column = pa.array([file_name] * len(t))
+        t = t.append_column(file_name_column, new_column)
+
     write_deltalake(
         delta_folder, t, mode=delta_mode, schema_mode=schema_mode, engine="rust"
     )
 
 
 def convert_json_to_delta(
-    json_file, delta_folder, delta_mode="error", schema_mode="merge"
+    json_file,
+    delta_folder,
+    delta_mode="error",
+    schema_mode="merge",
+    file_name_column=None,
 ):
     json_file_path = Path(json_file)
     try:
@@ -59,6 +76,11 @@ def convert_json_to_delta(
 
     data = json.loads(json_text)
     df = pd.json_normalize(data)
+
+    # Añadiendo una fila con el nombre del archivo, sin la extensión.
+    if file_name_column is not None:
+        file_name = Path(json_file).stem
+        df[file_name_column] = file_name
 
     # Si alguna columna esta vacía, el tipo de datos será Null que no es compatible con Delta
     # por tanto se buscan dichas columnas y se le cambia el tipo de dato a string.
@@ -137,33 +159,15 @@ def todelta_command(
             show_default=False,
         ),
     ] = None,
-    delta_optimize: Annotated[
-        bool,
+    file_name_column: Annotated[
+        str,
         typer.Option(
-            "--deltaoptimize",
-            "-do",
-            help="Optimiza la tabla Delta, consolidando varios archivos Parquet pequeños en un archivo más grande.",
+            "--filenamecolumn",
+            "-fnc",
+            help="Nombre de una columna que se agregará a la tabla Delta y que contendrá el nombre del archivo origen, sin la extensión.",
             show_default=False,
         ),
-    ] = False,
-    delta_vacuum: Annotated[
-        bool,
-        typer.Option(
-            "--deltavacuum",
-            "-dv",
-            help="Elimina los archivos que han sido marcados para borrar, con un período de retención de 7 días.",
-            show_default=False,
-        ),
-    ] = False,
-    delta_vacuum0: Annotated[
-        bool,
-        typer.Option(
-            "--deltavacuum0",
-            "-dv0",
-            help="Elimina todos los archivos que han sido marcados para borrar, sin ningún período de retención.",
-            show_default=False,
-        ),
-    ] = False,
+    ] = None,
 ):
     """Convierte archivos CSV o JSON a una tabla Delta.
     Puede convertir un solo archivo o todos los archivos de una carpeta que cumplan con un patrón.
@@ -193,13 +197,22 @@ def todelta_command(
         if delta_mode != "error":
             print(f"Modo de escritura en la tabla Delta: {delta_mode}")
 
+        if file_name_column is not None:
+            print(
+                f"Se agregará la columna {file_name_column} con el nombre de cada archivo origen, sin la extensión."
+            )
+
         print()
 
         try:
             if input_format == InputFormat.csv:
-                convert_csv_to_delta(input, output, delta_mode, schema_mode, delimiter)
+                convert_csv_to_delta(
+                    input, output, delta_mode, schema_mode, delimiter, file_name_column
+                )
             else:
-                convert_json_to_delta(input, output, delta_mode, schema_mode)
+                convert_json_to_delta(
+                    input, output, delta_mode, schema_mode, file_name_column
+                )
 
         except CsvDelimiterNotDetected:
             print_error(
@@ -232,6 +245,11 @@ def todelta_command(
         if delta_mode != "error":
             print(f"Modo de escritura en la tabla Delta: {delta_mode}")
 
+        if file_name_column is not None:
+            print(
+                f"Se agregará la columna {file_name_column} con el nombre de cada archivo origen, sin la extensión."
+            )
+
         print()
 
         is_first_file = True
@@ -252,10 +270,17 @@ def todelta_command(
 
                 if input_format == InputFormat.csv:
                     convert_csv_to_delta(
-                        input_file, output, delta_mode, schema_mode, delimiter
+                        input_file,
+                        output,
+                        delta_mode,
+                        schema_mode,
+                        delimiter,
+                        file_name_column,
                     )
                 else:
-                    convert_json_to_delta(input_file, output, delta_mode, schema_mode)
+                    convert_json_to_delta(
+                        input_file, output, delta_mode, schema_mode, file_name_column
+                    )
 
             except CsvDelimiterNotDetected:
                 print_error(
@@ -284,29 +309,3 @@ def todelta_command(
             f'El origen "{input}" no es válido. Tiene que ser la ruta a un archivo CSV o JSON o a una carpeta que existan.'
         )
         sys.exit(3)
-
-    if delta_optimize or delta_vacuum or delta_vacuum0:
-
-        dt = DeltaTable(output)
-
-        if delta_optimize:
-            ro = dt.optimize()
-            print()
-            print(
-                f"La tabla Delta fue optimizada. {ro['numFilesRemoved']} archivo(s) marcado(s) para borrar. {ro['numFilesAdded']} archivo(s) agregado(s)."
-            )
-
-        if delta_vacuum0:
-            deleted_files = dt.vacuum(
-                dry_run=False, enforce_retention_duration=False, retention_hours=0
-            )
-            print()
-            print(
-                f"Operación VACUUM sin ningún período de retención aplicada a la tabla Delta. {len(deleted_files)} archivo(s) eliminado(s)."
-            )
-        elif delta_vacuum:
-            deleted_files = dt.vacuum(dry_run=False)
-            print()
-            print(
-                f"Operación VACUUM con 7 días de retención aplicada a la tabla Delta. {len(deleted_files)} archivo(s) eliminado(s)."
-            )

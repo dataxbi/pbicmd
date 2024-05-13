@@ -19,8 +19,10 @@ import commands.daxdif as daxdif
 import commands.fabric as fabric
 import commands.toparquet as toparquet
 import commands.todelta as todelta
+import commands.delta as delta
 
 app = typer.Typer(add_completion=False)
+
 
 @app.callback(invoke_without_command=True)
 def callback(
@@ -55,6 +57,7 @@ app.command(name="dax")(dax.dax_command)
 app.command(name="daxdif")(daxdif.daxdif_command)
 app.command(name="toparquet")(toparquet.toparquet_command)
 app.command(name="todelta")(todelta.todelta_command)
+app.command(name="delta")(delta.delta_command)
 app.add_typer(fabric.app, name="fabric")
 
 

@@ -23,6 +23,7 @@ cd dist
 del version.txt
 del exe_version_info.txt
 del *.zip
+del *.sha256.txt
 "C:\Program Files\7-Zip\7z.exe" -tzip a  pbicmd.%Version%.zip pbicmd.exe
 certutil -hashfile .\pbicmd.%Version%.zip SHA256 > pbicmd.%Version%.zip.sha256.txt
 cd ..

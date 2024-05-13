@@ -32,7 +32,7 @@ Si ejecutamos `pbicmd.exe` sin parámetros, obtenemos la ayuda con los comandos 
 ```
 ./pbicmd.exe 
 ```
-![](doc/img//pbicmd-v0.5.0-help.png)
+![](doc/img//pbicmd-v0.6.0-help.png)
 
 
 ## Comandos

@@ -329,7 +329,7 @@ En este caso el patrón por defecto para los archivos de origen será `*.json`
 
 ### Comando `todelta`
 
-Este comando convierte archivos CSV a una tabla Delta (https://delta.io/). Puede convertir un solo archivo o todos los archivos de una carpeta que cumplan con un patrón.
+Este comando convierte archivos CSV o JSON a una tabla Delta (https://delta.io/). Puede convertir un solo archivo o todos los archivos de una carpeta que cumplan con un patrón.
 
 Podemos imprimir la ayuda de este comando de la siguiente manera:
 ```
@@ -337,8 +337,8 @@ Podemos imprimir la ayuda de este comando de la siguiente manera:
 ```
 
 Requiere dos parámetros: 
-- la ruta al origen, que puede ser un archivo CSV o una carpeta con archivos CSV
-- la ruta a la carpeta donde se va a guardar la tabla Delta
+- La ruta al origen, que puede ser un archivo CSV o JSON o una carpeta con archivos CSV o JSON
+- La ruta a la carpeta donde se va a guardar la tabla Delta
 
 Por ejemplo, si ejecutamos:
 ```

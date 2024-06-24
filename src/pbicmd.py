@@ -17,6 +17,7 @@ from typing_extensions import Annotated
 import commands.dax as dax
 import commands.daxdif as daxdif
 import commands.fabric as fabric
+import commands.fabric_lakehouse as fabriclh
 import commands.toparquet as toparquet
 import commands.todelta as todelta
 import commands.delta as delta
@@ -59,6 +60,7 @@ app.command(name="toparquet")(toparquet.toparquet_command)
 app.command(name="todelta")(todelta.todelta_command)
 app.command(name="delta")(delta.delta_command)
 app.add_typer(fabric.app, name="fabric")
+app.add_typer(fabriclh.app, name="fabriclh")
 
 
 if __name__ == "__main__":

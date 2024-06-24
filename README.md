@@ -9,6 +9,8 @@ Por ahora tiene estos comandos:
 - [comando `dax`](#comando-dax)
 - [comando `daxdif`](#comando-daxdif)
 - [comando `fabric`](#comando-fabric)
+- [comando `fabriclh`](#comando-fabriclh)
+- [comando `fabricwh`](#comando-fabricwh)
 - [comando `toparquet`](#comando-toparquet)
 - [comando `todelta`](#comando-todelta)
 - [comando `delta`](#comando-delta)
@@ -32,7 +34,7 @@ Si ejecutamos `pbicmd.exe` sin parámetros, obtenemos la ayuda con los comandos 
 ```
 ./pbicmd.exe 
 ```
-![](doc/img//pbicmd-v0.6.0-help.png)
+![](doc/img//pbicmd-v0.7.0-help.png)
 
 
 ## Comandos
@@ -249,6 +251,30 @@ Puedes imprimir la ayuda de esta manera:
 ```
 
 Solo tiene el parámetro requerido `-k` para indicar el SKU y que admite los valores `F2`, `F4`, y así hasta `F2048`.
+
+
+### Comando `fabriclh`
+
+Este comando utiliza la API de Fabric para manejar los Lakehouses de un área de trabajo, y tiene 3 subcomandos: listar, crear o borrar.
+
+Puedes imprimir la ayuda de esta manera:
+```
+./pbicmd.exe fabriclh --help
+```
+
+Y luego cada subcomando tiene su propia ayuda.
+
+
+### Comando `fabricwh`
+
+Este comando utiliza la API de Fabric para hacer operaciones de backup/restore en un Warehouse de Fabric.
+
+Puedes imprimir la ayuda de esta manera:
+```
+./pbicmd.exe fabricwh --help
+```
+
+Y luego cada subcomando tiene su propia ayuda.
 
 
 ### Comando `toparquet`

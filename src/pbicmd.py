@@ -16,11 +16,12 @@ from typing_extensions import Annotated
 
 import commands.dax as dax
 import commands.daxdif as daxdif
-import commands.fabric as fabric
-import commands.fabric_lakehouse as fabriclh
 import commands.toparquet as toparquet
 import commands.todelta as todelta
 import commands.delta as delta
+import commands.fabric as fabric
+import commands.fabric_warehouse as fabric_warehouse
+import commands.fabric_warehouse as fabric_warehouse
 
 app = typer.Typer(add_completion=False)
 

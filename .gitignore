@@ -4,6 +4,7 @@ dist
 notebooks
 __pycache__
 datos
+semdoc-*/
 
 *.ipynb
 *.dax

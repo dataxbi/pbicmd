@@ -22,6 +22,7 @@ import commands.delta as delta
 import commands.fabric as fabric
 import commands.fabric_lakehouse as fabriclh
 import commands.fabric_warehouse as fabricwh
+import commands.semdoc as semdoc
 
 app = typer.Typer(add_completion=False)
 
@@ -60,6 +61,7 @@ app.command(name="daxdif")(daxdif.daxdif_command)
 app.command(name="toparquet")(toparquet.toparquet_command)
 app.command(name="todelta")(todelta.todelta_command)
 app.command(name="delta")(delta.delta_command)
+app.command(name="semdoc")(semdoc.semdoc_command)
 app.add_typer(fabric.app, name="fabric")
 app.add_typer(fabriclh.app, name="fabriclh")
 app.add_typer(fabricwh.app, name="fabricwh")

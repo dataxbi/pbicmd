@@ -14,6 +14,7 @@ Por ahora tiene estos comandos:
 - [comando `toparquet`](#comando-toparquet)
 - [comando `todelta`](#comando-todelta)
 - [comando `delta`](#comando-delta)
+- [comando `semdoc`](#comando-semdoc)
 
 `pbicmd` está hecho con Python y es de código abierto.
 
@@ -34,7 +35,7 @@ Si ejecutamos `pbicmd.exe` sin parámetros, obtenemos la ayuda con los comandos 
 ```
 ./pbicmd.exe 
 ```
-![](doc/img//pbicmd-v0.7.0-help.png)
+![](doc/img//pbicmd-v0.8.0-help.png)
 
 
 ## Comandos
@@ -430,7 +431,7 @@ Utilizando el parámetro `-fnc` es posible añadir una columna a la tabla Delta 
 
 ### Comando `delta`
 
-Este permite optimizar una tabla Delta (https://delta.io/). 
+Este comando permite optimizar una tabla Delta (https://delta.io/). 
 
 Podemos imprimir la ayuda de este comando de la siguiente manera:
 ```
@@ -458,6 +459,45 @@ Ejemplos:
 ./pbicmd.exe delta c:/datos/tabla_delta -dv0
 ```
 
+Aquí tienes el texto revisado con correcciones gramaticales y de estilo:
+
+---
+
+### Comando `semdoc`
+
+Este comando genera páginas HTML con la documentación de un modelo semántico que está publicado en el servicio de Power BI.
+
+Podemos imprimir la ayuda de este comando de la siguiente manera:
+```
+./pbicmd.exe semdoc --help
+```
+
+Este comando requiere autenticación en el servicio de Power BI, por lo que te invito a leer más abajo las [opciones de autenticación disponibles](#autenticación).
+
+Si lo ejecutas manualmente, se abrirá el navegador por defecto con la página de autenticación de Microsoft. Para ejecutarlo automáticamente, sin interacción con una persona, debes usar una entidad de servicio de Azure y configurar variables de entorno, como se explica en la sección de autenticación.
+
+![](doc/img//pbicmd-v0.8.0-semdoc.png)
+
+Requiere un parámetro, que es el ID del modelo semántico en el servicio de Power BI. Por ejemplo:
+
+```
+./pbicmd.exe semdoc dddddddd-dddd-dddd-dddd-dddddddddddd
+```
+
+En este caso, se creará una subcarpeta en la carpeta actual con el nombre `semdoc-dddddddd-dddd-dddd-dddd-dddddddddddd` para guardar los archivos HTML generados. Si la carpeta ya existía, se borra su contenido antes de generar los archivos nuevos.
+
+Es posible indicar otra carpeta de destino con el parámetro `-o`. Por ejemplo:
+
+```
+./pbicmd.exe semdoc dddddddd-dddd-dddd-dddd-dddddddddddd -o c:\doc\modelo1
+```
+
+Cuando la documentación se ha generado, se abre el navegador por defecto con la página principal. 
+Sin embargo, podemos utilizar el parámetro `-nb` para indicar que no lo haga.
+
+```
+./pbicmd.exe semdoc dddddddd-dddd-dddd-dddd-dddddddddddd -o c:\doc\modelo1 -nb
+```
 
 ## Autenticación
 

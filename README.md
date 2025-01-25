@@ -6,30 +6,17 @@ La idea es ir incorporando comandos para automatizar diferentes tareas.
 
 Por ahora tiene estos comandos:
 
-- [pbicmd](#pbicmd)
-    - [Una herramienta de línea de comando (CLI) para automatizar tareas de Power BI](#una-herramienta-de-línea-de-comando-cli-para-automatizar-tareas-de-power-bi)
-  - [Primeros pasos](#primeros-pasos)
-  - [Comandos](#comandos)
-    - [Comando `dax`](#comando-dax)
-    - [Comando `daxdif`](#comando-daxdif)
-      - [Columnas claves](#columnas-claves)
-      - [Redondeo y tolerancia](#redondeo-y-tolerancia)
-    - [Comando `fabric`](#comando-fabric)
-      - [Subcomando `capacities`](#subcomando-capacities)
-      - [Subcomando `resume`](#subcomando-resume)
-      - [Subcomando `suspend`](#subcomando-suspend)
-      - [Subcomando `sku`](#subcomando-sku)
-    - [Comando `fabriclh`](#comando-fabriclh)
-    - [Comando `fabricwh`](#comando-fabricwh)
-    - [Comando `fabricetl`](#comando-fabricetl)
-    - [Comando `toparquet`](#comando-toparquet)
-    - [Comando `todelta`](#comando-todelta)
-    - [Comando `delta`](#comando-delta)
-    - [Comando `semdoc`](#comando-semdoc)
-  - [Autenticación](#autenticación)
-      - [Autenticación interactiva](#autenticación-interactiva)
-      - [Autenticación con entidad de servicio](#autenticación-con-entidad-de-servicio)
-      - [Otros métodos de autenticación](#otros-métodos-de-autenticación)
+<!-- no toc -->
+- [comando `dax`](#comando-dax)
+- [comando `daxdif`](#comando-daxdif) 
+- [comando `fabric`](#comando-fabric)
+- [comando `fabricetl`](#comando-fabricetl)
+- [comando `fabriclh`](#comando-fabriclh)
+- [comando `fabricwh`](#comando-fabricwh)
+- [comando `toparquet`](#comando-toparquet)
+- [comando `todelta`](#comando-todelta)
+- [comando `delta`](#comando-delta)
+- [comando `semdoc`](#comando-semdoc)
 
 `pbicmd` está hecho con Python y es de código abierto.
 
@@ -269,31 +256,6 @@ Puedes imprimir la ayuda de esta manera:
 Solo tiene el parámetro requerido `-k` para indicar el SKU y que admite los valores `F2`, `F4`, y así hasta `F2048`.
 
 
-### Comando `fabriclh`
-
-Este comando utiliza la API de Fabric para manejar los Lakehouses de un área de trabajo, y tiene 3 subcomandos: listar, crear o borrar.
-
-Puedes imprimir la ayuda de esta manera:
-```
-./pbicmd.exe fabriclh --help
-```
-
-Y luego cada subcomando tiene su propia ayuda.
-
-
-### Comando `fabricwh`
-
-Este comando utiliza la API de Fabric para hacer operaciones de backup/restore en un Warehouse de Fabric.
-
-Puedes imprimir la ayuda de esta manera:
-```
-./pbicmd.exe fabricwh --help
-```
-
-Y luego cada subcomando tiene su propia ayuda.
-
-
-
 ### Comando `fabricetl`
 
 Este comando se puede utilizar para controlar el encendido y apagado de una capacidada Fabric que se sólo se utilice para implementar una ETL. 
@@ -337,6 +299,30 @@ El comando tiene varios parámetros, que se pueden consultar de esta manera:
 
 `-mi` La cantidad máxima de veces que se comprueba la actualización del modelo semántico. Este parámetro es opcional y el valor por defecto es 10. Si se llega a a este límite y no se ha podido comprobar la actualización del modelo semántico, se apaga la cacapcidad.
 
+
+
+### Comando `fabriclh`
+
+Este comando utiliza la API de Fabric para manejar los Lakehouses de un área de trabajo, y tiene 3 subcomandos: listar, crear o borrar.
+
+Puedes imprimir la ayuda de esta manera:
+```
+./pbicmd.exe fabriclh --help
+```
+
+Y luego cada subcomando tiene su propia ayuda.
+
+
+### Comando `fabricwh`
+
+Este comando utiliza la API de Fabric para hacer operaciones de backup/restore en un Warehouse de Fabric.
+
+Puedes imprimir la ayuda de esta manera:
+```
+./pbicmd.exe fabricwh --help
+```
+
+Y luego cada subcomando tiene su propia ayuda.
 
 
 ### Comando `toparquet`

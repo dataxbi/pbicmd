@@ -6,15 +6,30 @@ La idea es ir incorporando comandos para automatizar diferentes tareas.
 
 Por ahora tiene estos comandos:
 
-- [comando `dax`](#comando-dax)
-- [comando `daxdif`](#comando-daxdif)
-- [comando `fabric`](#comando-fabric)
-- [comando `fabriclh`](#comando-fabriclh)
-- [comando `fabricwh`](#comando-fabricwh)
-- [comando `toparquet`](#comando-toparquet)
-- [comando `todelta`](#comando-todelta)
-- [comando `delta`](#comando-delta)
-- [comando `semdoc`](#comando-semdoc)
+- [pbicmd](#pbicmd)
+    - [Una herramienta de línea de comando (CLI) para automatizar tareas de Power BI](#una-herramienta-de-línea-de-comando-cli-para-automatizar-tareas-de-power-bi)
+  - [Primeros pasos](#primeros-pasos)
+  - [Comandos](#comandos)
+    - [Comando `dax`](#comando-dax)
+    - [Comando `daxdif`](#comando-daxdif)
+      - [Columnas claves](#columnas-claves)
+      - [Redondeo y tolerancia](#redondeo-y-tolerancia)
+    - [Comando `fabric`](#comando-fabric)
+      - [Subcomando `capacities`](#subcomando-capacities)
+      - [Subcomando `resume`](#subcomando-resume)
+      - [Subcomando `suspend`](#subcomando-suspend)
+      - [Subcomando `sku`](#subcomando-sku)
+    - [Comando `fabriclh`](#comando-fabriclh)
+    - [Comando `fabricwh`](#comando-fabricwh)
+    - [Comando `fabricetl`](#comando-fabricetl)
+    - [Comando `toparquet`](#comando-toparquet)
+    - [Comando `todelta`](#comando-todelta)
+    - [Comando `delta`](#comando-delta)
+    - [Comando `semdoc`](#comando-semdoc)
+  - [Autenticación](#autenticación)
+      - [Autenticación interactiva](#autenticación-interactiva)
+      - [Autenticación con entidad de servicio](#autenticación-con-entidad-de-servicio)
+      - [Otros métodos de autenticación](#otros-métodos-de-autenticación)
 
 `pbicmd` está hecho con Python y es de código abierto.
 
@@ -276,6 +291,52 @@ Puedes imprimir la ayuda de esta manera:
 ```
 
 Y luego cada subcomando tiene su propia ayuda.
+
+
+
+### Comando `fabricetl`
+
+Este comando se puede utilizar para controlar el encendido y apagado de una capacidada Fabric que se sólo se utilice para implementar una ETL. 
+
+Asume que en el servicio de Fabric / Power BI existe lo siguiente:
+- Un área de trabajo donde se implementa la ETL, con una capacidad Fabric que permanece "apagada".
+- Otro área de trabajo con licencia Pro o PPU que contiene un modelo semántico de Power BI en modo de almacenamiento import y que cargará los datos desde el ára de trabajo Fabric.
+- En el área de trabajo con Fabric existe: 
+  - Algún mecanismo, por ejemplo, una canaliación de datos, que ejecuta todo el proceso de ETL y al final actualiza el modelo semántico de Power BI en el otro área de trabajo.
+  - Un Lakehouse con una carpeta donde se creará un fichero de texto vacio, y esta acción servirá para desencadenar el inicio de la ETL. A este fichero lo llamamos fichero de control.
+
+Al ejecutar este comando sucede lo siguiente:
+- "Enciende" la capacidad Fabric.
+- Crea el fichero de texto en el Lakehouse.
+- Se queda esperando a que se haya actualizado el modelo semántico en el otro área de trabajo.
+- "Apaga" la capacidad Fabric.
+
+
+El comando tiene varios parámetros, que se pueden consultar de esta manera:
+
+```
+./pbicmd.exe fabricetl --help
+```
+ Y que son los siguientes:
+
+`-c` El ID de la capacidad Fabric, que tiene este formato: `/subscriptions/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/resourceGroups/xxxxxxxxxx/providers/Microsoft.Fabric/capacities/xxxxxxxxx` y que se puede obtener desde la página de propiedades de la cacapcidad fabric en el portal de Azure.
+
+`-fws` EL ID del área de trabajo con capacidad Fabric.
+
+`-lh` El ID del Lakehouse donde se creará el fichero de control.
+
+`-cd` La ruta en el Lakehouse de la carpeta donde se creará el fichero de control. Este parámetro es opcional y el valor por defecto es `control`.
+
+`-cf` Inicio del nombre del fichero de control. Este parámetro es opcional y el valor por defecto es `start_etl_pipeline`. El nombre completo tendrá la fecha, un GUID y la extensión .txt.
+
+`-pws` ID del área de trabajo donde está el modelo semántico.
+
+`-ds` ID del modelo semántico.
+
+`-wt` Tiempo de espera, en segundos, mientras se está monitorizando la actualización del modelo semántico. Este parámetro es opcional y el valor por defecto es 120.
+
+`-mi` La cantidad máxima de veces que se comprueba la actualización del modelo semántico. Este parámetro es opcional y el valor por defecto es 10. Si se llega a a este límite y no se ha podido comprobar la actualización del modelo semántico, se apaga la cacapcidad.
+
 
 
 ### Comando `toparquet`

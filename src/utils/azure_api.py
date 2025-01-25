@@ -1,6 +1,7 @@
 from azure.identity import DefaultAzureCredential
 
 AZURE_MANAGEMENT_SCOPE = "https://management.azure.com/.default"
+AZURE_STORAGE_SCOPE = "https://storage.azure.com/.default"
 
 
 def get_access_token(scope: str) -> str:

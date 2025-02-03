@@ -258,20 +258,33 @@ Solo tiene el parámetro requerido `-k` para indicar el SKU y que admite los val
 
 ### Comando `fabricetl`
 
-Este comando se puede utilizar para controlar el encendido y apagado de una capacidada Fabric que se sólo se utilice para implementar una ETL. 
+Aquí tienes el texto mejorado con una redacción más clara y precisa:  
 
-Asume que en el servicio de Fabric / Power BI existe lo siguiente:
-- Un área de trabajo donde se implementa la ETL, con una capacidad Fabric que permanece "apagada".
-- Otro área de trabajo con licencia Pro o PPU que contiene un modelo semántico de Power BI en modo de almacenamiento import y que cargará los datos desde el ára de trabajo Fabric.
-- En el área de trabajo con Fabric existe: 
-  - Algún mecanismo, por ejemplo, una canaliación de datos, que ejecuta todo el proceso de ETL y al final actualiza el modelo semántico de Power BI en el otro área de trabajo.
-  - Un Lakehouse con una carpeta donde se creará un fichero de texto vacio, y esta acción servirá para desencadenar el inicio de la ETL. A este fichero lo llamamos fichero de control.
+---
 
-Al ejecutar este comando sucede lo siguiente:
-- "Enciende" la capacidad Fabric.
-- Crea el fichero de texto en el Lakehouse.
-- Se queda esperando a que se haya actualizado el modelo semántico en el otro área de trabajo.
-- "Apaga" la capacidad Fabric.
+Este comando permite controlar el encendido y apagado de una capacidad **Fabric** utilizada exclusivamente para ejecutar una **ETL**.  
+
+Se asume que en el servicio **Fabric / Power BI** existen los siguientes elementos:  
+
+1. **Área de trabajo de ETL**  
+   - Contiene una **capacidad Fabric**, la cual permanece apagada cuando no está en uso.  
+   - Alberga el proceso de **ETL**, que se ejecutará una vez que la capacidad esté activa.  
+
+2. **Área de trabajo con licencia Pro o PPU**  
+   - Contiene un **modelo semántico de Power BI** en modo de almacenamiento *import*.  
+   - Cargará los datos desde el área de trabajo de **Fabric**.  
+
+3. **Elementos dentro del área de trabajo de Fabric**  
+   - Un mecanismo (por ejemplo, una **canalización de datos**) que ejecuta la **ETL** y, al finalizar, actualiza el modelo semántico en el otro área de trabajo.  
+   - Un **Lakehouse** con una carpeta específica donde se creará un **fichero de control** (un archivo de texto vacío).  
+   - La creación de este **fichero de control** servirá para iniciar la ejecución de la ETL.  
+
+Al ejecutar este comando, se realiza el siguiente proceso:  
+
+1. **Enciende** la capacidad **Fabric**.  
+2. **Crea** el fichero de control en el **Lakehouse** para desencadenar el proceso de ETL.  
+3. **Espera** hasta que el modelo semántico de Power BI en el otro área de trabajo haya sido actualizado.  
+4. **Apaga** la capacidad **Fabric** una vez completado el proceso.  
 
 
 El comando tiene varios parámetros, que se pueden consultar de esta manera:

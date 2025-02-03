@@ -168,7 +168,8 @@ def fabricetl_command(
         ),
     ] = 10,
 ):
-    """Enciende una capacidad Fabric, crea un fichero de control en un Lakehouse, y se queda esperando a que un modelo semántico se actualice y luego apaga la capacidad.."""
+    """Controla el encendido y apagado de una capacidad Fabric para ejecutar una ETL. Enciende la capacidad, crea un fichero de control en el Lakehouse, espera la actualización del modelo semántico en Power BI y apaga la capacidad al finalizar.
+"""
 
     access_token_azure = get_access_token(AZURE_MANAGEMENT_SCOPE)
     access_token_storage = get_access_token(AZURE_STORAGE_SCOPE)
@@ -238,13 +239,6 @@ def fabricetl_command(
     print(f"El fichero de control ha sido CREADO: {file_url}")
     print()
 
-    time.sleep(10)
-
-    print("Borrando el fichero de control...")
-    r = delete_control_file(access_token=access_token_storage, file_url=file_url)
-    print(f"El fichero de control ha sido BORRADO: {file_url}")
-    print()
-
     print(
         "Esperando unos minutos para comenzar a monitorizar la actualización del modelo semántico..."
     )
@@ -263,11 +257,9 @@ def fabricetl_command(
         dataset_status = None
         if len(refresh_history) > 0:
             rh = refresh_history[0]
-            if rh["status"] == "Completed":
-                dataset_update = rh["endTime"]
-
-            if dataset_update != dataset_last_update:
-                dataset_status = rh["status"]
+            dataset_update = rh["endTime"]
+            dataset_status = rh["status"]
+            if dataset_status == "Completed" and dataset_update != dataset_last_update:
                 break
 
         max_iter = max_iter - 1
@@ -279,10 +271,13 @@ def fabricetl_command(
     if dataset_status == "Completed":
         print("El modelo semántico de Power BI ha sido ACTUALIZADO.")
         print(
-            f"Última actualización del modelo semántico: [b]{dataset_update}[/b]  Estado: [b]{rh['status']}[/b]"
+            f"Última actualización del modelo semántico: [b]{dataset_update}[/b]  Estado: [b]{dataset_status}[/b]"
         )
     else:
         print_error("El modelo semántico de Power BI NO pudo ser ACTUALIZADO.")
+        print(
+            f"Última actualización del modelo semántico: [b]{dataset_update}[/b]  Estado: [b]{dataset_status}[/b]"
+        )
     print()
 
     print("Esperando unos minutos para apagar la capacidad...")

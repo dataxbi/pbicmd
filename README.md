@@ -258,10 +258,6 @@ Solo tiene el parámetro requerido `-k` para indicar el SKU y que admite los val
 
 ### Comando `fabricetl`
 
-Aquí tienes el texto mejorado con una redacción más clara y precisa:  
-
----
-
 Este comando permite controlar el encendido y apagado de una capacidad **Fabric** utilizada exclusivamente para ejecutar una **ETL**.  
 
 Se asume que en el servicio **Fabric / Power BI** existen los siguientes elementos:  

@@ -49,3 +49,35 @@ def run_data_pipeline(access_token: str, workspace_id: str, data_pipeline_id: st
     http_response = requests.post(api_url, headers=headers)
     http_response.raise_for_status()
     return http_response.ok
+
+
+# Las siguientes dos funciones no se están usando en este momento,
+# pero las dejo aquí para recordar cómo se puede crear y borrar un fichero en OneLake.
+
+
+def create_control_file(
+    access_token, workspace_id, lakehouse_id, control_directory, control_file_prefix
+):
+    file_name = f"{control_file_prefix}_{datetime.datetime.now().strftime('%Y-%m-%d')}_{uuid4()}.txt"
+    file_url = f"https://onelake.dfs.fabric.microsoft.com/{workspace_id}/{lakehouse_id}/Files/{control_directory}/{file_name}"
+    url = f"{file_url}?resource=file"
+
+    headers = {
+        "Authorization": f"Bearer " + access_token,
+        "Content-Type": "application/octet-stream",
+    }
+
+    http_response = requests.put(url, headers=headers, data=b"")
+    http_response.raise_for_status()
+    return file_url
+
+
+def delete_control_file(access_token, file_url):
+    headers = {
+        "Authorization": f"Bearer " + access_token,
+        "Content-Type": "application/octet-stream",
+    }
+
+    http_response = requests.delete(file_url, headers=headers)
+    http_response.raise_for_status()
+    return http_response.ok

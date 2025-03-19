@@ -20,35 +20,8 @@ from utils.fabric_api import (
     get_fabric_capacity,
     resume_fabric_capacity,
     suspend_fabric_capacity,
+    run_data_pipeline,
 )
-
-
-def create_control_file(
-    access_token, workspace_id, lakehouse_id, control_directory, control_file_prefix
-):
-    file_name = f"{control_file_prefix}_{datetime.datetime.now().strftime('%Y-%m-%d')}_{uuid4()}.txt"
-    file_url = f"https://onelake.dfs.fabric.microsoft.com/{workspace_id}/{lakehouse_id}/Files/{control_directory}/{file_name}"
-    url = f"{file_url}?resource=file"
-
-    headers = {
-        "Authorization": f"Bearer " + access_token,
-        "Content-Type": "application/octet-stream",
-    }
-
-    http_response = requests.put(url, headers=headers, data=b"")
-    http_response.raise_for_status()
-    return file_url
-
-
-def delete_control_file(access_token, file_url):
-    headers = {
-        "Authorization": f"Bearer " + access_token,
-        "Content-Type": "application/octet-stream",
-    }
-
-    http_response = requests.delete(file_url, headers=headers)
-    http_response.raise_for_status()
-    return http_response.ok
 
 
 def get_dataset(access_token: str, workspace_id: str, dataset_id: str):
@@ -104,12 +77,12 @@ def fabricetl_command(
             show_default=False,
         ),
     ],
-    lakehouse_id: Annotated[
+    data_pipeline_id: Annotated[
         UUID,
         typer.Option(
-            "--lakehouse",
-            "-lh",
-            help="ID del Lakehouse donde se creará el fichero de control.",
+            "--datapipeline",
+            "-dp",
+            help="ID de la canalización de datos que implemente la ETL.",
             show_default=False,
         ),
     ],
@@ -131,24 +104,6 @@ def fabricetl_command(
             show_default=False,
         ),
     ],
-    control_directory: Annotated[
-        str,
-        typer.Option(
-            "--cdir",
-            "-cd",
-            help="Ruta a la carpeta donde se creará el fichero de control.",
-            show_default=True,
-        ),
-    ] = "control",
-    control_control_file_prefix: Annotated[
-        str,
-        typer.Option(
-            "--cfile",
-            "-cf",
-            help="Inicio del nombre del fichero de control.",
-            show_default=True,
-        ),
-    ] = "start_etl_pipeline",
     wait_time: Annotated[
         int,
         typer.Option(
@@ -168,11 +123,9 @@ def fabricetl_command(
         ),
     ] = 10,
 ):
-    """Controla el encendido y apagado de una capacidad Fabric para ejecutar una ETL. Enciende la capacidad, crea un fichero de control en el Lakehouse, espera la actualización del modelo semántico en Power BI y apaga la capacidad al finalizar.
-"""
+    """Controla el encendido y apagado de una capacidad Fabric para ejecutar una ETL. Enciende la capacidad, inicia la ejecución de una canalización de datos que orquesta la ETL, espera la actualización del modelo semántico en Power BI y apaga la capacidad al finalizar."""
 
     access_token_azure = get_access_token(AZURE_MANAGEMENT_SCOPE)
-    access_token_storage = get_access_token(AZURE_STORAGE_SCOPE)
     access_token_powerbi = get_access_token(POWER_BI_SCOPE)
 
     capacity = get_fabric_capacity(
@@ -228,15 +181,15 @@ def fabricetl_command(
     print("La capacidad está [b]ENCENDIDA[/b].")
     print()
 
-    print("Creando el fichero de control...")
-    file_url = create_control_file(
-        access_token=access_token_storage,
+    print("Iniciando la ejecución de la canalización de datos...")
+
+    run_data_pipeline(
+        access_token=access_token_powerbi,
         workspace_id=fabric_workspace_id,
-        lakehouse_id=lakehouse_id,
-        control_directory=control_directory,
-        control_file_prefix=control_control_file_prefix,
+        data_pipeline_id=data_pipeline_id,
     )
-    print(f"El fichero de control ha sido CREADO: {file_url}")
+
+    print("La ejecución de la canalización de datos se ha [b]INICIADO[/b].")
     print()
 
     print(

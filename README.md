@@ -37,7 +37,7 @@ Si ejecutamos `pbicmd.exe` sin parámetros, obtenemos la ayuda con los comandos 
 ```
 ./pbicmd.exe 
 ```
-![](doc/img//pbicmd-v0.9.0-help.png)
+![](doc/img//pbicmd-v0.9.1-help.png)
 
 
 ## Comandos
@@ -263,22 +263,20 @@ Este comando permite controlar el encendido y apagado de una capacidad **Fabric*
 Se asume que en el servicio **Fabric / Power BI** existen los siguientes elementos:  
 
 1. **Área de trabajo de ETL**  
-   - Contiene una **capacidad Fabric**, la cual permanece apagada cuando no está en uso.  
+   - Tiene asignada una **capacidad Fabric**, la cual permanece apagada cuando no está en uso.  
+   - Contiene una **canalización de datos** que ejecuta la **ETL** y, al finalizar, actualiza el modelo semántico en el otro área de trabajo.  
    - Alberga el proceso de **ETL**, que se ejecutará una vez que la capacidad esté activa.  
 
-2. **Área de trabajo con licencia Pro o PPU**  
+2. **Área de trabajo de Power BI**  
+   - Tiene asignada una **licencia Power BI Pro o PPU**.
    - Contiene un **modelo semántico de Power BI** en modo de almacenamiento *import*.  
    - Cargará los datos desde el área de trabajo de **Fabric**.  
 
-3. **Elementos dentro del área de trabajo de Fabric**  
-   - Un mecanismo (por ejemplo, una **canalización de datos**) que ejecuta la **ETL** y, al finalizar, actualiza el modelo semántico en el otro área de trabajo.  
-   - Un **Lakehouse** con una carpeta específica donde se creará un **fichero de control** (un archivo de texto vacío).  
-   - La creación de este **fichero de control** servirá para iniciar la ejecución de la ETL.  
 
 Al ejecutar este comando, se realiza el siguiente proceso:  
 
 1. **Enciende** la capacidad **Fabric**.  
-2. **Crea** el fichero de control en el **Lakehouse** para desencadenar el proceso de ETL.  
+2. **Inicia** la ejecución de la canalización de datos que hace la ETL.  
 3. **Espera** hasta que el modelo semántico de Power BI en el otro área de trabajo haya sido actualizado.  
 4. **Apaga** la capacidad **Fabric** una vez completado el proceso.  
 
@@ -294,12 +292,6 @@ El comando tiene varios parámetros, que se pueden consultar de esta manera:
 
 `-fws` EL ID del área de trabajo con capacidad Fabric.
 
-`-lh` El ID del Lakehouse donde se creará el fichero de control.
-
-`-cd` La ruta en el Lakehouse de la carpeta donde se creará el fichero de control. Este parámetro es opcional y el valor por defecto es `control`.
-
-`-cf` Inicio del nombre del fichero de control. Este parámetro es opcional y el valor por defecto es `start_etl_pipeline`. El nombre completo tendrá la fecha, un GUID y la extensión .txt.
-
 `-pws` ID del área de trabajo donde está el modelo semántico.
 
 `-ds` ID del modelo semántico.
@@ -307,7 +299,6 @@ El comando tiene varios parámetros, que se pueden consultar de esta manera:
 `-wt` Tiempo de espera, en segundos, mientras se está monitorizando la actualización del modelo semántico. Este parámetro es opcional y el valor por defecto es 120.
 
 `-mi` La cantidad máxima de veces que se comprueba la actualización del modelo semántico. Este parámetro es opcional y el valor por defecto es 10. Si se llega a a este límite y no se ha podido comprobar la actualización del modelo semántico, se apaga la cacapcidad.
-
 
 
 ### Comando `fabriclh`
